@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amal R — AI Lead, Edge AI for Industrial Automation</title>
+<meta name="description" content="Amal R — AI Lead specializing in real-time edge AI systems for industrial automation.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0D0D0D;
+    --fg:#E8E6E0;
+    --accent:#F5A623;
+    --panel:#3A4A5C;
+    --muted:#9aa3ab;
+    --hairline:#2a2a2a;
+    --mono:'IBM Plex Mono', monospace;
+    --sans:'IBM Plex Sans', sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--bg);
+    color:var(--fg);
+    font-family:var(--sans);
+    line-height:1.6;
+    font-size:16px;
+    overflow-x:hidden;
+  }
+  a{color:var(--accent);text-decoration:none;}
+  a:hover{text-decoration:underline;}
+
+  .container{
+    max-width:920px;
+    margin:0 auto;
+    padding:0 24px;
+  }
+
+  /* NAV */
+  header{
+    position:sticky;
+    top:0;
+    z-index:100;
+    background:rgba(13,13,13,0.9);
+    backdrop-filter:blur(6px);
+    border-bottom:1px solid var(--hairline);
+  }
+  nav{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:18px 24px;
+    max-width:920px;
+    margin:0 auto;
+  }
+  .logo{
+    font-family:var(--mono);
+    font-weight:700;
+    font-size:16px;
+    letter-spacing:1px;
+    color:var(--fg);
+  }
+  .logo span{color:var(--accent);}
+  .nav-links{
+    display:flex;
+    gap:28px;
+    font-family:var(--mono);
+    font-size:13px;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    overflow-x:auto;
+    scrollbar-width:none;
+  }
+  .nav-links::-webkit-scrollbar{display:none;}
+  .nav-links a{flex:0 0 auto;}
+  .nav-links a{color:var(--muted);}
+  .nav-links a:hover{color:var(--accent);text-decoration:none;}
+
+  /* EYEBROW */
+  .eyebrow{
+    font-family:var(--mono);
+    font-size:13px;
+    letter-spacing:3px;
+    color:var(--accent);
+    text-transform:uppercase;
+    margin-bottom:16px;
+    display:block;
+  }
+
+  /* HERO */
+  .hero{
+    padding:100px 0 80px;
+    border-bottom:1px solid var(--hairline);
+  }
+  .hero h1{
+    font-family:var(--mono);
+    font-size:clamp(36px, 6vw, 56px);
+    font-weight:700;
+    line-height:1.15;
+    margin-bottom:14px;
+  }
+  .hero h1 .accent{color:var(--accent);}
+  .hero .role{
+    font-family:var(--mono);
+    font-size:clamp(15px, 2.5vw, 20px);
+    color:var(--muted);
+    margin-bottom:24px;
+  }
+  .hero p.lead{
+    max-width:600px;
+    font-size:17px;
+    color:var(--fg);
+    margin-bottom:36px;
+  }
+  .hero-cta{
+    display:flex;
+    gap:16px;
+    flex-wrap:wrap;
+    margin-bottom:64px;
+  }
+  .btn{
+    font-family:var(--mono);
+    font-size:13px;
+    letter-spacing:1px;
+    text-transform:uppercase;
+    padding:12px 22px;
+    border:1px solid var(--accent);
+    color:var(--accent);
+    border-radius:2px;
+    transition:background 0.15s, color 0.15s;
+  }
+  .btn:hover{
+    background:var(--accent);
+    color:var(--bg);
+    text-decoration:none;
+  }
+  .btn.ghost{
+    border-color:var(--hairline);
+    color:var(--fg);
+  }
+  .btn.ghost:hover{
+    border-color:var(--fg);
+    background:transparent;
+    color:var(--fg);
+  }
+
+  /* PIPELINE ANIMATION */
+  .pipeline{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    width:100%;
+    overflow-x:auto;
+    padding:24px 4px;
+    gap:0;
+  }
+  .pipeline-node{
+    flex:0 0 auto;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:10px;
+    min-width:110px;
+  }
+  .node-box{
+    width:64px;
+    height:64px;
+    border:1px solid var(--panel);
+    background:#15191d;
+    border-radius:4px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:24px;
+    position:relative;
+  }
+  .node-label{
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:1px;
+    color:var(--muted);
+    text-transform:uppercase;
+    text-align:center;
+  }
+  .pipeline-connector{
+    flex:1 1 40px;
+    height:2px;
+    background:var(--hairline);
+    position:relative;
+    min-width:30px;
+    margin:0 4px;
+    align-self:center;
+    margin-bottom:34px;
+    overflow:hidden;
+  }
+  .pipeline-connector .pulse{
+    position:absolute;
+    top:0;
+    left:-30%;
+    width:30%;
+    height:100%;
+    background:linear-gradient(90deg, transparent, var(--accent), transparent);
+    animation:pulse-move 2.6s linear infinite;
+  }
+  .pipeline-connector:nth-child(2) .pulse{animation-delay:0s;}
+  .pipeline-connector:nth-child(4) .pulse{animation-delay:0.65s;}
+  .pipeline-connector:nth-child(6) .pulse{animation-delay:1.3s;}
+  .pipeline-connector:nth-child(8) .pulse{animation-delay:1.95s;}
+
+  @keyframes pulse-move{
+    0%{left:-30%;}
+    100%{left:100%;}
+  }
+
+  .node-box.active{
+    border-color:var(--accent);
+    box-shadow:0 0 12px rgba(245,166,35,0.25);
+  }
+
+  /* SECTIONS */
+  section{
+    padding:70px 0;
+    border-bottom:1px solid var(--hairline);
+  }
+  section:last-of-type{border-bottom:none;}
+  h2{
+    font-family:var(--mono);
+    font-size:clamp(24px, 4vw, 32px);
+    font-weight:700;
+    margin-bottom:28px;
+  }
+
+  /* fade in */
+  .fade-in{
+    opacity:0;
+    transform:translateY(16px);
+    transition:opacity 0.6s ease, transform 0.6s ease;
+  }
+  .fade-in.visible{
+    opacity:1;
+    transform:translateY(0);
+  }
+
+  /* ABOUT */
+  .about-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:40px;
+  }
+  .about-grid p{margin-bottom:16px;color:var(--fg);}
+  .about-stats{
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+  }
+  .stat{
+    border:1px solid var(--hairline);
+    background:#131313;
+    padding:18px 20px;
+    border-radius:4px;
+  }
+  .stat .num{
+    font-family:var(--mono);
+    font-size:28px;
+    font-weight:700;
+    color:var(--accent);
+  }
+  .stat .label{
+    font-family:var(--mono);
+    font-size:12px;
+    letter-spacing:1px;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin-top:4px;
+  }
+
+  /* EXPERIENCE */
+  .job{
+    margin-bottom:48px;
+  }
+  .job:last-child{margin-bottom:0;}
+  .job-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-bottom:6px;
+  }
+  .job-title{
+    font-family:var(--mono);
+    font-size:18px;
+    font-weight:700;
+    color:var(--fg);
+  }
+  .job-meta{
+    font-family:var(--mono);
+    font-size:13px;
+    color:var(--accent);
+  }
+  .job-company{
+    font-size:14px;
+    color:var(--muted);
+    margin-bottom:16px;
+  }
+  .job-project{
+    margin-top:18px;
+    padding-left:18px;
+    border-left:2px solid var(--panel);
+  }
+  .job-project h4{
+    font-family:var(--mono);
+    font-size:14px;
+    color:var(--fg);
+    margin-bottom:8px;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+  }
+  .job ul{
+    list-style:none;
+    padding-left:0;
+  }
+  .job li{
+    position:relative;
+    padding-left:18px;
+    margin-bottom:8px;
+    color:var(--fg);
+    font-size:15px;
+  }
+  .job li::before{
+    content:'▸';
+    position:absolute;
+    left:0;
+    color:var(--accent);
+  }
+
+  /* PROJECTS */
+  .project-card{
+    border:1px solid var(--hairline);
+    background:#131313;
+    border-radius:4px;
+    padding:28px;
+  }
+  .project-card h3{
+    font-family:var(--mono);
+    font-size:18px;
+    margin-bottom:14px;
+    color:var(--fg);
+  }
+  .project-card ul{
+    list-style:none;
+  }
+  .project-card li{
+    position:relative;
+    padding-left:18px;
+    margin-bottom:10px;
+    font-size:15px;
+  }
+  .project-card li::before{
+    content:'▸';
+    position:absolute;
+    left:0;
+    color:var(--accent);
+  }
+  .tag-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:18px;
+  }
+  .tag{
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:0.5px;
+    padding:4px 10px;
+    border:1px solid var(--panel);
+    border-radius:2px;
+    color:var(--muted);
+    text-transform:uppercase;
+  }
+
+  /* SKILLS */
+  .skills-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(220px,1fr));
+    gap:28px;
+  }
+  .skill-group h4{
+    font-family:var(--mono);
+    font-size:13px;
+    letter-spacing:1px;
+    text-transform:uppercase;
+    color:var(--accent);
+    margin-bottom:12px;
+  }
+  .skill-group .tag-row{margin-top:0;}
+
+  /* EDUCATION */
+  .edu-item{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    flex-wrap:wrap;
+    gap:8px;
+    padding:14px 0;
+    border-bottom:1px solid var(--hairline);
+  }
+  .edu-item:last-child{border-bottom:none;}
+  .edu-item .edu-name{font-weight:600;color:var(--fg);}
+  .edu-item .edu-sub{font-size:13px;color:var(--muted);}
+  .edu-item .edu-meta{
+    font-family:var(--mono);
+    font-size:13px;
+    color:var(--accent);
+    white-space:nowrap;
+  }
+
+  /* CONTACT */
+  .contact-grid{
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+  .contact-row{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    font-family:var(--mono);
+    font-size:15px;
+  }
+  .contact-row .label{
+    color:var(--muted);
+    min-width:90px;
+    text-transform:uppercase;
+    font-size:12px;
+    letter-spacing:1px;
+  }
+
+  footer{
+    padding:30px 0;
+    text-align:center;
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--muted);
+  }
+
+  @media (max-width:768px){
+    .about-grid{grid-template-columns:1fr;}
+    nav{gap:12px;}
+    .nav-links{gap:14px;font-size:11px;}
+    .node-box{width:48px;height:48px;font-size:18px;}
+    .node-label{font-size:9px;}
+    .pipeline-connector{margin-bottom:26px;}
+    .job-header{flex-direction:column;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <nav>
+    <div class="logo">AMAL_<span>R</span></div>
+    <div class="nav-links">
+      <a href="#about">About</a>
+      <a href="#experience">Experience</a>
+      <a href="#projects">Projects</a>
+      <a href="#skills">Skills</a>
+      <a href="#contact">Contact</a>
+    </div>
+  </nav>
+</header>
+
+<main class="container">
+
+  <!-- HERO -->
+  <section class="hero">
+    <span class="eyebrow">[ AI LEAD ]</span>
+    <h1>Amal R</h1>
+    <div class="role">Real-time Edge AI for Industrial Automation</div>
+    <p class="lead">
+      I design modular, low-code configurable AI pipelines deployed across 20+ production sites —
+      turning camera feeds on factory floors into real-time decisions at the edge.
+    </p>
+    <div class="hero-cta">
+      <a class="btn" href="#contact">Get in touch</a>
+      <a class="btn ghost" href="#experience">View experience</a>
+    </div>
+
+    <!-- PIPELINE ANIMATION -->
+    <div class="pipeline" aria-hidden="true">
+      <div class="pipeline-node">
+        <div class="node-box" id="node-1">📷</div>
+        <div class="node-label">Camera</div>
+      </div>
+      <div class="pipeline-connector"><div class="pulse"></div></div>
+      <div class="pipeline-node">
+        <div class="node-box" id="node-2">⚙</div>
+        <div class="node-label">Edge GPU</div>
+      </div>
+      <div class="pipeline-connector"><div class="pulse"></div></div>
+      <div class="pipeline-node">
+        <div class="node-box" id="node-3">◧</div>
+        <div class="node-label">Model</div>
+      </div>
+      <div class="pipeline-connector"><div class="pulse"></div></div>
+      <div class="pipeline-node">
+        <div class="node-box" id="node-4">▣</div>
+        <div class="node-label">Output</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section id="about">
+    <span class="eyebrow fade-in">[ ABOUT ]</span>
+    <h2 class="fade-in">Summary</h2>
+    <div class="about-grid">
+      <div class="fade-in">
+        <p>
+          AI Lead specializing in real-time edge AI systems for industrial automation, with
+          experience designing modular, low-code configurable AI pipelines for rapid deployment
+          across 20+ production sites.
+        </p>
+        <p>
+          My work spans the full stack of industrial computer vision — from high-performance data
+          acquisition off industrial cameras, to DAG-based pipeline orchestration, to optimized
+          model inference on edge GPUs using TensorRT, to event-driven systems that keep everything
+          running reliably in the field.
+        </p>
+        <p>
+          Based in Bengaluru, India.
+        </p>
+      </div>
+      <div class="about-stats fade-in">
+        <div class="stat">
+          <div class="num">20+</div>
+          <div class="label">Production sites deployed</div>
+        </div>
+        <div class="stat">
+          <div class="num">300K</div>
+          <div class="label">Bags inspected / day</div>
+        </div>
+        <div class="stat">
+          <div class="num">10,000+</div>
+          <div class="label">Products inspected / day</div>
+        </div>
+        <div class="stat">
+          <div class="num">50µm</div>
+          <div class="label">Dimensioning tolerance (1px @ 5MP)</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- EXPERIENCE -->
+  <section id="experience">
+    <span class="eyebrow fade-in">[ EXPERIENCE ]</span>
+    <h2 class="fade-in">Work Experience</h2>
+
+    <div class="job fade-in">
+      <div class="job-header">
+        <div class="job-title">AI Lead — Frinks AI</div>
+        <div class="job-meta">Apr 2024 – Present</div>
+      </div>
+      <div class="job-company">Bengaluru, India</div>
+
+      <div class="job-project">
+        <h4>Real-time Edge AI Inference Platform</h4>
+        <ul>
+          <li>Architected a high-performance edge AI inference platform deployed in 10+ industrial plants across India.</li>
+          <li>Designed a modular DAG-based workflow system for low-code configuration of AI pipelines — object detection, segmentation, OCR, dimensioning.</li>
+          <li>Built a high-performance data acquisition system using multiprocessing and shared memory for low-latency video from industrial cameras (GStreamer, hardware triggers).</li>
+          <li>Integrated and optimized deep learning models (YOLOv8, UNet) using TensorRT on edge GPUs.</li>
+          <li>Built an event-driven architecture using RabbitMQ and Redis for async communication, error handling, and remote configuration.</li>
+          <li>Managed Docker-based deployment across all sites.</li>
+        </ul>
+      </div>
+
+      <div class="job-project">
+        <h4>Real-time Cement Bag Inspection System</h4>
+        <ul>
+          <li>Built a scalable real-time system for tracking, counting, and label-checking using YOLOv8 + OCSORT.</li>
+          <li>Processes 300k bags/day accurately.</li>
+          <li>Dockerized to handle up to 10 simultaneous camera streams.</li>
+          <li>Implemented live streaming of annotated results plus per-camera recording.</li>
+          <li>Deployed in 20+ cement plants across India.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="job fade-in">
+      <div class="job-header">
+        <div class="job-title">AI Engineer — Frinks AI</div>
+        <div class="job-meta">Jun 2022 – Mar 2024</div>
+      </div>
+      <div class="job-company">Bengaluru, India</div>
+
+      <div class="job-project">
+        <h4>Medical Device Quality Inspection</h4>
+        <ul>
+          <li>End-to-end computer vision solution for 360° healthcare product inspection.</li>
+          <li>Achieved 50-micron (1-pixel) tolerance for dimensioning with a 5MP monochrome camera.</li>
+          <li>Enabled daily inspection of 10,000+ products.</li>
+        </ul>
+      </div>
+
+      <div class="job-project">
+        <h4>Novel Anomaly Detection Algorithm</h4>
+        <ul>
+          <li>Developed a novel deep learning feature extraction method integrated with an Asymmetric Student-Teacher (AST) model.</li>
+          <li>Improved accuracy, reduced false positives, and increased reliability for industrial deployment.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROJECTS -->
+  <section id="projects">
+    <span class="eyebrow fade-in">[ PROJECTS ]</span>
+    <h2 class="fade-in">Projects</h2>
+
+    <div class="project-card fade-in">
+      <h3>Multi-Tenant AI Agent Platform</h3>
+      <ul>
+        <li>Multi-tenant WhatsApp AI assistant automating customer service, lead generation, and appointment booking — 24/7.</li>
+        <li>High-throughput, multi-process architecture using FastAPI and RabbitMQ; zero message loss under load, no API timeouts.</li>
+        <li>Stateless, tool-calling LangChain agent with a multi-tenant RAG pipeline for context-aware responses; Redis for session management and horizontal scaling.</li>
+        <li>Full CI/CD with GitHub Actions deploying to AWS EC2; fully containerized stack (Python, PostgreSQL, Redis, RabbitMQ) with Docker.</li>
+      </ul>
+      <div class="tag-row">
+        <span class="tag">FastAPI</span>
+        <span class="tag">LangChain</span>
+        <span class="tag">RAG</span>
+        <span class="tag">RabbitMQ</span>
+        <span class="tag">Redis</span>
+        <span class="tag">PostgreSQL</span>
+        <span class="tag">Docker</span>
+        <span class="tag">AWS EC2</span>
+        <span class="tag">GitHub Actions</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- SKILLS -->
+  <section id="skills">
+    <span class="eyebrow fade-in">[ SKILLS ]</span>
+    <h2 class="fade-in">Skills</h2>
+
+    <div class="skills-grid">
+      <div class="skill-group fade-in">
+        <h4>Languages</h4>
+        <div class="tag-row">
+          <span class="tag">Python</span>
+          <span class="tag">SQL</span>
+        </div>
+      </div>
+      <div class="skill-group fade-in">
+        <h4>Frameworks</h4>
+        <div class="tag-row">
+          <span class="tag">PyTorch</span>
+          <span class="tag">Keras</span>
+          <span class="tag">Flask</span>
+        </div>
+      </div>
+      <div class="skill-group fade-in">
+        <h4>Tools</h4>
+        <div class="tag-row">
+          <span class="tag">Git</span>
+          <span class="tag">Docker</span>
+          <span class="tag">VS Code</span>
+          <span class="tag">Jupyter</span>
+          <span class="tag">Linux</span>
+        </div>
+      </div>
+      <div class="skill-group fade-in">
+        <h4>Libraries</h4>
+        <div class="tag-row">
+          <span class="tag">Scikit-learn</span>
+          <span class="tag">Pandas</span>
+          <span class="tag">NumPy</span>
+          <span class="tag">OpenCV</span>
+          <span class="tag">Matplotlib</span>
+          <span class="tag">RabbitMQ</span>
+        </div>
+      </div>
+      <div class="skill-group fade-in">
+        <h4>Operating Systems</h4>
+        <div class="tag-row">
+          <span class="tag">Linux</span>
+          <span class="tag">Windows</span>
+        </div>
+      </div>
+      <div class="skill-group fade-in">
+        <h4>Areas of Interest</h4>
+        <div class="tag-row">
+          <span class="tag">Object Detection</span>
+          <span class="tag">Segmentation</span>
+          <span class="tag">Anomaly Detection</span>
+          <span class="tag">2D/3D Dimensioning</span>
+          <span class="tag">LLMs</span>
+          <span class="tag">Low-code Systems</span>
+          <span class="tag">Workflow Orchestration</span>
+          <span class="tag">GANs</span>
+          <span class="tag">NLP</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- EDUCATION -->
+  <section id="education">
+    <span class="eyebrow fade-in">[ EDUCATION ]</span>
+    <h2 class="fade-in">Education</h2>
+    <div class="fade-in">
+      <div class="edu-item">
+        <div>
+          <div class="edu-name">MSc Computer Science — IIITM Kerala</div>
+          <div class="edu-sub">2020 – 2022</div>
+        </div>
+        <div class="edu-meta">CGPA: 9.3 / 10</div>
+      </div>
+      <div class="edu-item">
+        <div>
+          <div class="edu-name">BSc Physics — University of Kerala</div>
+          <div class="edu-sub">2017 – 2020</div>
+        </div>
+        <div class="edu-meta">CGPA: 9.2 / 10</div>
+      </div>
+      <div class="edu-item">
+        <div>
+          <div class="edu-name">Class 12 — CBSE</div>
+          <div class="edu-sub">2017</div>
+        </div>
+        <div class="edu-meta">90 / 100</div>
+      </div>
+      <div class="edu-item">
+        <div>
+          <div class="edu-name">Class 10 — CBSE</div>
+          <div class="edu-sub">2015</div>
+        </div>
+        <div class="edu-meta">10 / 10</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section id="contact">
+    <span class="eyebrow fade-in">[ CONTACT ]</span>
+    <h2 class="fade-in">Get in touch</h2>
+    <div class="contact-grid fade-in">
+      <div class="contact-row">
+        <span class="label">Email</span>
+        <a href="mailto:amalradhakrishnan198@gmail.com">amalradhakrishnan198@gmail.com</a>
+      </div>
+      <div class="contact-row">
+        <span class="label">Phone</span>
+        <span>+91 8848881596</span>
+      </div>
+      <div class="contact-row">
+        <span class="label">GitHub</span>
+        <a href="https://github.com/amal-r" target="_blank" rel="noopener">github.com/amal-r</a>
+      </div>
+      <div class="contact-row">
+        <span class="label">LinkedIn</span>
+        <a href="https://linkedin.com/in/amal-r" target="_blank" rel="noopener">linkedin.com/in/amal-r</a>
+      </div>
+      <div class="contact-row">
+        <span class="label">Location</span>
+        <span>Bengaluru, India</span>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  &copy; 2026 Amal R — Built with HTML, CSS &amp; vanilla JS.
+</footer>
+
+<script>
+  // Scroll-triggered fade-ins
+  const fadeEls = document.querySelectorAll('.fade-in');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.15 });
+  fadeEls.forEach(el => observer.observe(el));
+
+  // Pipeline node activation synced loosely with pulse animation
+  const nodes = ['node-1','node-2','node-3','node-4'].map(id => document.getElementById(id));
+  let activeIndex = 0;
+  function pulseNodes(){
+    nodes.forEach(n => n.classList.remove('active'));
+    nodes[activeIndex].classList.add('active');
+    activeIndex = (activeIndex + 1) % nodes.length;
+  }
+  pulseNodes();
+  setInterval(pulseNodes, 650);
+</script>
+
+</body>
+</html>
