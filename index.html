@@ -23,7 +23,7 @@
     --sans:'IBM Plex Sans', sans-serif;
   }
   *{margin:0;padding:0;box-sizing:border-box;}
-  html{scroll-behavior:smooth;}
+  html{scroll-behavior:smooth;overflow-x:hidden;}
   body{
     background:var(--bg);
     color:var(--fg);
@@ -528,6 +528,84 @@
   footer{padding:32px 0;text-align:center;font-family:var(--mono);font-size:12px;color:var(--muted);position:relative;z-index:1;}
   footer .sep{color:var(--panel);margin:0 8px;}
 
+  /* ===== INTERACTIVE / FANCY LAYER ===== */
+  /* Boot sequence */
+  #boot{
+    position:fixed;inset:0;z-index:9999;background:#0D0D0D;
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--mono);transition:opacity .55s ease;
+  }
+  #boot.done{opacity:0;pointer-events:none;}
+  .boot-inner{width:min(460px,86vw);}
+  .boot-brand{font-size:18px;color:var(--fg);font-weight:700;margin-bottom:20px;letter-spacing:1px;}
+  .boot-brand span{color:var(--accent);}
+  .boot-brand .bdot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);margin-right:8px;animation:blink 1s infinite;}
+  .boot-line{font-size:12.5px;color:var(--muted);margin-bottom:7px;opacity:0;transform:translateX(-6px);transition:opacity .25s,transform .25s;}
+  .boot-line.show{opacity:1;transform:none;}
+  .boot-line .ok{color:var(--green);}
+  .boot-line .val{color:var(--accent);}
+  .boot-bar{height:3px;background:#1a1a1a;border-radius:2px;margin-top:16px;overflow:hidden;}
+  .boot-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),#ffce6b);box-shadow:0 0 10px var(--accent);transition:width .25s ease;}
+
+  /* Scroll progress */
+  #progress{position:fixed;top:0;left:0;height:2px;width:0;background:linear-gradient(90deg,var(--accent),#ffce6b);z-index:300;box-shadow:0 0 8px var(--accent);transition:width .08s linear;}
+
+  /* Cursor spotlight */
+  #cursor-glow{
+    position:fixed;top:0;left:0;width:420px;height:420px;border-radius:50%;
+    pointer-events:none;z-index:0;transform:translate(-9999px,-9999px);opacity:0;
+    background:radial-gradient(circle,rgba(245,166,35,0.10),transparent 62%);
+    transition:opacity .4s ease;mix-blend-mode:screen;will-change:transform;
+  }
+
+  /* Interactive network canvas */
+  #net{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.9;}
+
+  /* Nav scroll-spy */
+  .nav-links a{position:relative;}
+  .nav-links a.active{color:var(--accent);}
+  .nav-links a.active::after{
+    content:'';position:absolute;left:0;right:0;bottom:-6px;height:2px;
+    background:var(--accent);box-shadow:0 0 6px var(--accent);
+  }
+
+  /* Tilt helper */
+  .tilt{transition:transform .18s ease, box-shadow .2s ease;transform-style:preserve-3d;will-change:transform;}
+
+  /* Interactive cam feed modes */
+  .cam-modes{display:flex;gap:8px;margin-top:14px;justify-content:center;flex-wrap:wrap;}
+  .cam-mode{
+    font-family:var(--mono);font-size:11px;letter-spacing:1px;text-transform:uppercase;
+    padding:7px 14px;border:1px solid var(--hairline);border-radius:3px;color:var(--muted);
+    cursor:pointer;transition:all .15s;background:transparent;
+  }
+  .cam-mode:hover{border-color:var(--panel);color:var(--fg);}
+  .cam-mode.active{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);}
+  /* mode visual variants on the detection box */
+  .det-box.m-segment{background:rgba(92,203,123,0.18);border-color:var(--green);box-shadow:0 0 16px rgba(92,203,123,0.4);}
+  .det-box.m-segment .tag{background:var(--green);}
+  .det-box.m-segment .corner{border-color:var(--green);}
+  .det-box.m-ocr{border-style:dashed;}
+  .det-box .ocrtext{
+    position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    font-family:var(--mono);font-size:10px;color:var(--accent);
+    background:rgba(0,0,0,0.6);padding:3px 6px;border-radius:2px;white-space:nowrap;
+    opacity:0;transition:opacity .2s;
+  }
+  .det-box.m-ocr .ocrtext{opacity:1;}
+
+  /* pipeline node hover */
+  .node-box{cursor:default;}
+  .pipeline-node:hover .node-box{border-color:var(--accent);color:var(--accent);box-shadow:0 0 16px rgba(245,166,35,0.3);transform:translateY(-3px);}
+  .pipeline-node .node-box{transition:transform .2s, border-color .3s, box-shadow .3s, color .3s;}
+
+  /* hero name scramble */
+  #hero-name{cursor:default;}
+
+  @media (hover:none),(pointer:coarse){
+    #cursor-glow{display:none;}
+  }
+
   @media (max-width:820px){
     .hero-top{grid-template-columns:1fr;gap:36px;}
     .cam-feed{max-width:440px;}
@@ -554,6 +632,24 @@
 </head>
 <body>
 
+<!-- Boot sequence -->
+<div id="boot">
+  <div class="boot-inner">
+    <div class="boot-brand"><span class="bdot"></span>AMAL_<span>R</span> · EDGE RUNTIME</div>
+    <div class="boot-line" data-d="0">$ init edge-ai-platform <span class="ok">[ok]</span></div>
+    <div class="boot-line" data-d="1">› loading models <span class="val">yolov8 · unet · ast</span> <span class="ok">[ok]</span></div>
+    <div class="boot-line" data-d="2">› optimizing inference <span class="val">tensorrt</span> <span class="ok">[ok]</span></div>
+    <div class="boot-line" data-d="3">› connecting cameras <span class="val">10 streams</span> <span class="ok">[ok]</span></div>
+    <div class="boot-line" data-d="4">› deploying to <span class="val">20+ sites</span> <span class="ok">[ok]</span></div>
+    <div class="boot-line" data-d="5">› system online — welcome.</div>
+    <div class="boot-bar"><i></i></div>
+  </div>
+</div>
+
+<div id="progress"></div>
+<canvas id="net"></canvas>
+<div id="cursor-glow"></div>
+
 <header>
   <nav>
     <div class="logo"><span class="dot"></span>AMAL_<span>R</span></div>
@@ -575,7 +671,7 @@
     <div class="hero-top">
       <div>
         <span class="eyebrow">[ AI LEAD · FRINKS AI ]</span>
-        <h1>Amal <span class="accent">R</span></h1>
+        <h1 id="hero-name" title="hover to re-scramble">Amal <span class="accent">R</span></h1>
         <div class="role">Building&nbsp;<span class="typed" id="typed"></span><span class="cursor"></span></div>
         <p class="lead">
           I turn camera feeds on factory floors into real-time decisions at the edge —
@@ -588,24 +684,32 @@
         </div>
       </div>
 
-      <!-- Live detection demo -->
-      <div class="cam-feed" aria-hidden="true" title="Illustrative real-time inspection feed">
-        <div class="cam-hud">
-          <span class="rec"><span class="rdot"></span>CAM_01 · REC</span>
-          <span class="fps">42 FPS · YOLOv8</span>
+      <!-- Live detection demo (interactive) -->
+      <div class="cam-col">
+        <div class="cam-feed tilt" id="camfeed" title="Interactive feed — switch modes below">
+          <div class="cam-hud">
+            <span class="rec"><span class="rdot"></span>CAM_01 · REC</span>
+            <span class="fps" id="camfps">42 FPS · YOLOv8</span>
+          </div>
+          <div class="scanline"></div>
+          <div class="belt"></div>
+          <div class="bag b1"></div>
+          <div class="bag b2"></div>
+          <div class="bag b3"></div>
+          <div class="det-box" id="detbox">
+            <span class="tag" id="dettag">bag · 0.98 · label ✓</span>
+            <span class="ocrtext" id="ocrtext">BATCH#A23-0915</span>
+            <span class="corner tl"></span><span class="corner tr"></span>
+            <span class="corner bl"></span><span class="corner br"></span>
+          </div>
+          <div class="cam-count">COUNT: <b id="bagcount">312,480</b></div>
+          <div class="cam-status">● INFERENCE OK</div>
         </div>
-        <div class="scanline"></div>
-        <div class="belt"></div>
-        <div class="bag b1"></div>
-        <div class="bag b2"></div>
-        <div class="bag b3"></div>
-        <div class="det-box">
-          <span class="tag">bag · 0.98 · label ✓</span>
-          <span class="corner tl"></span><span class="corner tr"></span>
-          <span class="corner bl"></span><span class="corner br"></span>
+        <div class="cam-modes">
+          <button class="cam-mode active" data-mode="detect">Detect</button>
+          <button class="cam-mode" data-mode="segment">Segment</button>
+          <button class="cam-mode" data-mode="ocr">OCR</button>
         </div>
-        <div class="cam-count">COUNT: <b id="bagcount">312,480</b></div>
-        <div class="cam-status">● INFERENCE OK</div>
       </div>
     </div>
 
@@ -996,6 +1100,205 @@
   const bagEl = document.getElementById('bagcount');
   let bags = 312480;
   setInterval(() => { bags += Math.floor(Math.random()*4)+1; bagEl.textContent = bags.toLocaleString(); }, 1400);
+
+  /* ============ INTERACTIVE / FANCY LAYER ============ */
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const finePointer = window.matchMedia('(pointer: fine)').matches;
+
+  /* --- Boot sequence --- */
+  (function boot(){
+    const boot = document.getElementById('boot');
+    if (!boot) return;
+    const lines = [...boot.querySelectorAll('.boot-line')];
+    const bar = boot.querySelector('.boot-bar i');
+    const finish = () => { boot.classList.add('done'); setTimeout(()=>boot.remove(), 700); };
+    if (reduced){ finish(); return; }
+    let i = 0;
+    const step = () => {
+      if (i < lines.length){
+        lines[i].classList.add('show');
+        bar.style.width = Math.round(((i+1)/lines.length)*100) + '%';
+        i++;
+        setTimeout(step, 230);
+      } else {
+        setTimeout(finish, 480);
+      }
+    };
+    setTimeout(step, 180);
+  })();
+
+  /* --- Scroll progress bar --- */
+  const progress = document.getElementById('progress');
+  const onScrollProgress = () => {
+    const h = document.documentElement;
+    const max = h.scrollHeight - h.clientHeight;
+    progress.style.width = (max > 0 ? (h.scrollTop / max) * 100 : 0) + '%';
+  };
+  window.addEventListener('scroll', onScrollProgress, { passive:true });
+  onScrollProgress();
+
+  /* --- Scroll-spy nav --- */
+  const navLinks = [...document.querySelectorAll('.nav-links a')];
+  const spyTargets = navLinks.map(a => document.querySelector(a.getAttribute('href'))).filter(Boolean);
+  const spyObs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting){
+        navLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + e.target.id));
+      }
+    });
+  }, { rootMargin: '-45% 0px -50% 0px' });
+  spyTargets.forEach(t => spyObs.observe(t));
+
+  /* --- Cursor spotlight --- */
+  if (finePointer && !reduced){
+    const glow = document.getElementById('cursor-glow');
+    window.addEventListener('mousemove', (e) => {
+      glow.style.opacity = '1';
+      glow.style.transform = `translate(${e.clientX}px, ${e.clientY}px) translate(-50%,-50%)`;
+    });
+    window.addEventListener('mouseleave', () => glow.style.opacity = '0');
+  }
+
+  /* --- Interactive neural-network background --- */
+  (function network(){
+    const canvas = document.getElementById('net');
+    if (!canvas || reduced){ if(canvas) canvas.style.display='none'; return; }
+    const ctx = canvas.getContext('2d');
+    let w, h, dpr, nodes = [];
+    const mouse = { x: -9999, y: -9999 };
+    function resize(){
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      w = canvas.width = innerWidth * dpr;
+      h = canvas.height = innerHeight * dpr;
+      canvas.style.width = innerWidth + 'px';
+      canvas.style.height = innerHeight + 'px';
+      const count = Math.min(70, Math.floor(innerWidth / 22));
+      nodes = Array.from({length: count}, () => ({
+        x: Math.random()*w, y: Math.random()*h,
+        vx: (Math.random()-0.5)*0.25*dpr, vy: (Math.random()-0.5)*0.25*dpr
+      }));
+    }
+    resize();
+    addEventListener('resize', resize);
+    addEventListener('mousemove', e => { mouse.x = e.clientX*dpr; mouse.y = e.clientY*dpr; });
+    addEventListener('mouseleave', () => { mouse.x = mouse.y = -9999; });
+    const LINK = 140;
+    let running = true;
+    document.addEventListener('visibilitychange', () => { running = !document.hidden; if(running) draw(); });
+    function draw(){
+      if (!running) return;
+      ctx.clearRect(0,0,w,h);
+      const link = LINK*dpr, mrad = 170*dpr;
+      for (const n of nodes){
+        n.x += n.vx; n.y += n.vy;
+        if (n.x<0||n.x>w) n.vx*=-1;
+        if (n.y<0||n.y>h) n.vy*=-1;
+        // gentle attraction to cursor
+        const dx = mouse.x-n.x, dy = mouse.y-n.y, d = Math.hypot(dx,dy);
+        if (d < mrad && d > 1){ n.x += dx/d*0.6; n.y += dy/d*0.6; }
+      }
+      for (let i=0;i<nodes.length;i++){
+        for (let j=i+1;j<nodes.length;j++){
+          const a=nodes[i], b=nodes[j];
+          const dist = Math.hypot(a.x-b.x, a.y-b.y);
+          if (dist < link){
+            const o = (1 - dist/link)*0.5;
+            ctx.strokeStyle = `rgba(58,74,92,${o})`;
+            ctx.lineWidth = dpr;
+            ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+          }
+        }
+      }
+      for (const n of nodes){
+        const near = Math.hypot(mouse.x-n.x, mouse.y-n.y) < mrad;
+        ctx.fillStyle = near ? 'rgba(245,166,35,0.9)' : 'rgba(120,135,150,0.55)';
+        ctx.beginPath(); ctx.arc(n.x,n.y, (near?2.2:1.5)*dpr, 0, Math.PI*2); ctx.fill();
+      }
+      requestAnimationFrame(draw);
+    }
+    draw();
+  })();
+
+  /* --- 3D tilt on cards --- */
+  if (finePointer && !reduced){
+    document.querySelectorAll('.cap-card, .project-card, .stat, .cam-feed').forEach(el => {
+      el.classList.add('tilt');
+      el.addEventListener('mousemove', (e) => {
+        const r = el.getBoundingClientRect();
+        const px = (e.clientX - r.left)/r.width - 0.5;
+        const py = (e.clientY - r.top)/r.height - 0.5;
+        el.style.transform = `perspective(700px) rotateX(${(-py*6).toFixed(2)}deg) rotateY(${(px*6).toFixed(2)}deg) translateY(-4px)`;
+      });
+      el.addEventListener('mouseleave', () => { el.style.transform = ''; });
+    });
+  }
+
+  /* --- Magnetic buttons --- */
+  if (finePointer && !reduced){
+    document.querySelectorAll('.btn').forEach(btn => {
+      btn.addEventListener('mousemove', (e) => {
+        const r = btn.getBoundingClientRect();
+        const x = e.clientX - r.left - r.width/2;
+        const y = e.clientY - r.top - r.height/2;
+        btn.style.transform = `translate(${x*0.25}px, ${y*0.35}px)`;
+      });
+      btn.addEventListener('mouseleave', () => { btn.style.transform = ''; });
+    });
+  }
+
+  /* --- Hero name scramble --- */
+  (function scramble(){
+    const el = document.getElementById('hero-name');
+    if (!el) return;
+    const finalHTML = 'Amal <span class="accent">R</span>';
+    const finalText = 'Amal R';
+    const chars = '!<>-_\\/[]{}=+*^?#@$%';
+    let raf;
+    function run(){
+      if (reduced){ el.innerHTML = finalHTML; return; }
+      cancelAnimationFrame(raf);
+      let frame = 0;
+      const total = 28;
+      const reveal = finalText.split('').map((c,i)=> i*1.4 + Math.random()*6);
+      const tick = () => {
+        let out = '';
+        for (let i=0;i<finalText.length;i++){
+          if (finalText[i] === ' '){ out += ' '; continue; }
+          if (frame >= reveal[i]) out += finalText[i];
+          else out += chars[Math.floor(Math.random()*chars.length)];
+        }
+        el.textContent = out;
+        frame++;
+        if (frame <= total + 8) raf = requestAnimationFrame(tick);
+        else el.innerHTML = finalHTML;
+      };
+      tick();
+    }
+    setTimeout(run, reduced ? 0 : 1600); // after boot
+    el.addEventListener('mouseenter', run);
+  })();
+
+  /* --- Interactive cam feed mode switch --- */
+  (function camModes(){
+    const box = document.getElementById('detbox');
+    const tag = document.getElementById('dettag');
+    const fps = document.getElementById('camfps');
+    const btns = document.querySelectorAll('.cam-mode');
+    const modes = {
+      detect:  { cls:'',          tag:'bag · 0.98 · label ✓', fps:'42 FPS · YOLOv8' },
+      segment: { cls:'m-segment', tag:'mask · IoU 0.96',       fps:'31 FPS · UNet'   },
+      ocr:     { cls:'m-ocr',     tag:'OCR · read',            fps:'38 FPS · PaddleOCR' }
+    };
+    btns.forEach(b => b.addEventListener('click', () => {
+      btns.forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      const m = modes[b.dataset.mode];
+      box.classList.remove('m-segment','m-ocr');
+      if (m.cls) box.classList.add(m.cls);
+      tag.textContent = m.tag;
+      fps.textContent = m.fps;
+    }));
+  })();
 </script>
 
 </body>
