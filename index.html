@@ -680,6 +680,47 @@
   .ri-stat b{font-size:20px;color:var(--accent);display:block;}
   .ri-stat span{font-size:10px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;}
 
+  /* CLI nav button */
+  .nav-cli{
+    font-family:var(--mono);font-size:12px;color:var(--accent);background:transparent;
+    border:1px solid var(--hairline);padding:5px 11px;border-radius:3px;cursor:pointer;
+    letter-spacing:1px;transition:all .15s;flex:0 0 auto;margin-left:4px;
+  }
+  .nav-cli:hover{border-color:var(--accent);box-shadow:0 0 12px rgba(245,166,35,.28);}
+
+  /* CLI terminal mode */
+  #term{
+    position:fixed;inset:0;z-index:9997;background:#080a0c;display:flex;flex-direction:column;
+    font-family:var(--mono);opacity:0;pointer-events:none;transform:scale(.992);
+    transition:opacity .28s ease, transform .28s ease;
+  }
+  #term.open{opacity:1;pointer-events:auto;transform:none;}
+  #term::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:2;
+    background:repeating-linear-gradient(rgba(255,255,255,0.022) 0 1px, transparent 1px 3px);}
+  #term.panic{animation:glitch .16s steps(2) infinite;}
+  @keyframes glitch{0%{transform:translate(0,0)}20%{transform:translate(-2px,1px)}40%{transform:translate(2px,-1px)}60%{transform:translate(-1px,2px)}80%{transform:translate(1px,-2px)}100%{transform:translate(-2px,-1px)}}
+  .term-bar{display:flex;align-items:center;justify-content:space-between;padding:9px 16px;border-bottom:1px solid var(--hairline);background:#0c0f12;flex:0 0 auto;z-index:3;}
+  .term-bar .dots{display:flex;gap:7px;}
+  .term-bar .dots i{width:11px;height:11px;border-radius:50%;display:inline-block;}
+  .term-bar .dots .r{background:#ff5f56;}.term-bar .dots .y{background:#ffbd2e;}.term-bar .dots .g{background:#27c93f;}
+  .term-bar .ttl{font-size:12px;color:var(--muted);letter-spacing:1px;}
+  .term-bar .x{font-size:12px;color:var(--muted);cursor:pointer;border:1px solid var(--hairline);padding:3px 11px;border-radius:3px;transition:all .15s;}
+  .term-bar .x:hover{color:var(--accent);border-color:var(--accent);}
+  .term-body{flex:1 1 auto;overflow-y:auto;padding:16px;font-size:13.5px;line-height:1.55;color:var(--fg);z-index:1;scrollbar-width:thin;}
+  .term-body .ln{white-space:pre-wrap;word-break:break-word;}
+  .term-body .prompt{color:var(--green);}
+  .term-body .path{color:#6fb3d2;}
+  .term-body .err{color:#ff6b6b;}
+  .term-body .ok{color:var(--green);}
+  .term-body .dim{color:var(--muted);}
+  .term-body .acc{color:var(--accent);}
+  .term-body .dir{color:var(--accent);font-weight:600;}
+  .term-body a{color:var(--accent);}
+  .term-input-row{display:flex;align-items:center;}
+  .term-input{flex:1;background:transparent;border:none;outline:none;color:var(--fg);font-family:var(--mono);font-size:13.5px;caret-color:var(--accent);padding:0;}
+  .term-cmd{color:var(--fg);}
+  #matrix-cv{position:absolute;inset:0;z-index:4;background:#000;cursor:pointer;}
+
   @media (hover:none),(pointer:coarse){
     #cursor-glow{display:none;}
   }
@@ -742,6 +783,7 @@
       <a href="#projects">Projects</a>
       <a href="#skills">Skills</a>
       <a href="#contact">Contact</a>
+      <button class="nav-cli" id="nav-cli" title="Enter CLI mode">&gt;_ CLI</button>
     </div>
   </nav>
 </header>
@@ -1158,6 +1200,16 @@
 
 </main>
 
+<!-- CLI terminal -->
+<div id="term" aria-hidden="true">
+  <div class="term-bar">
+    <span class="dots"><i class="r"></i><i class="y"></i><i class="g"></i></span>
+    <span class="ttl">amal@edge-runtime — ssh session</span>
+    <span class="x" id="term-x">exit ✕</span>
+  </div>
+  <div class="term-body" id="term-body"></div>
+</div>
+
 <!-- Command palette -->
 <div id="cmdk" role="dialog" aria-modal="true" aria-label="Command palette">
   <div class="cmdk-box">
@@ -1499,6 +1551,7 @@
     const clickMode = m => { const b = document.querySelector('.cam-mode[data-mode="'+m+'"]'); if (b){ b.click(); jump('#about'); window.scrollTo({top:0,behavior:'smooth'}); } };
     const copy = t => { (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.resolve()).finally(()=>toast('Copied · '+t)); };
     const actions = [
+      {label:'Enter CLI mode',       hint:'cli',  run:()=>window.openTerminal && window.openTerminal()},
       {label:'Go to About',          hint:'nav',  run:()=>jump('#about')},
       {label:'Go to Capabilities',   hint:'nav',  run:()=>jump('#capabilities')},
       {label:'Go to Deployments',    hint:'nav',  run:()=>jump('#deployments')},
@@ -1629,6 +1682,427 @@
       grp.addEventListener('click', show);
       g.appendChild(grp);
     });
+  })();
+
+  /* ============ CLI TERMINAL MODE ============ */
+  (function terminal(){
+    const term = document.getElementById('term');
+    const body = document.getElementById('term-body');
+    const USER = 'amal@edge-runtime';
+
+    /* ---- virtual filesystem ---- */
+    const f = (content) => ({ type:'file', content });
+    const d = (children) => ({ type:'dir', children });
+    const FS = d({
+      'README.md': f(
+`┌─ amal@edge-runtime ───────────────────────────────┐
+│  You found the shell. Same portfolio, as a        │
+│  filesystem. Poke around — every folder is a       │
+│  section, every file is a fact.                    │
+└────────────────────────────────────────────────────┘
+
+try:
+  ls -a                 list everything (even hidden)
+  tree                  the whole tree
+  cat about/summary.txt read a file
+  neofetch              system info
+  hire-me               why we should talk
+  help                  all commands
+
+there's a .secrets/ folder. and... don't try to rm anything ;)`),
+      'about': d({
+        'summary.txt': f('AI Lead specializing in real-time edge AI systems for industrial\nautomation. I design modular, low-code configurable AI pipelines for\nrapid deployment across 20+ production sites.'),
+        'location.txt': f('Bengaluru, India.  (UTC+5:30)'),
+        'now.txt': f('AI Lead @ Frinks AI  (Apr 2024 - present)\nBuilding real-time edge AI for factory floors.')
+      }),
+      'experience': d({
+        'frinks-lead.md': f('# AI Lead - Frinks AI  (Apr 2024 - present)\n\n## Real-time Edge AI Inference Platform  [10+ plants]\n- Architected a high-performance edge AI inference platform.\n- Modular DAG-based workflow engine for low-code AI pipelines\n  (detection, segmentation, OCR, dimensioning).\n- High-throughput acquisition: multiprocessing + shared memory,\n  GStreamer, hardware triggers.\n- YOLOv8 / UNet optimized with TensorRT on edge GPUs.\n- Event-driven: RabbitMQ + Redis. Deployed via Docker.\n\n## Cement Bag Inspection  [20+ plants - 300k bags/day]\n- YOLOv8 + OCSORT tracking/counting/label-check.\n- Up to 10 simultaneous camera streams, dockerized.\n- Live annotated streaming + per-camera recording.'),
+        'frinks-engineer.md': f('# AI Engineer - Frinks AI  (Jun 2022 - Mar 2024)\n\n## Medical Device Quality Inspection  [10k+ units/day]\n- End-to-end CV for 360 deg healthcare product inspection.\n- 50-micron (1-pixel) tolerance on a 5MP monochrome camera.\n\n## Novel Anomaly Detection\n- Novel DL feature extraction + Asymmetric Student-Teacher (AST).\n- Higher accuracy, fewer false positives, industrial-grade.'),
+        'highlights.log': f('[2022-06] joined Frinks AI as AI Engineer\n[2022]    medical device QA  -> 50um tolerance, 10k+/day\n[2023]    novel AST anomaly detection shipped\n[2024-04] promoted to AI Lead\n[2024]    edge inference platform live across 10+ plants\n[2024]    cement bag inspection -> 300k bags/day, 20+ plants')
+      }),
+      'projects': d({
+        'multi-tenant-agent.md': f('# Multi-Tenant AI Agent Platform\n\n- WhatsApp AI assistant: customer service, lead-gen, bookings 24/7.\n- High-throughput multi-process arch (FastAPI + RabbitMQ),\n  zero message loss under load.\n- Stateless tool-calling LangChain agent + multi-tenant RAG,\n  Redis sessions for horizontal scaling.\n- CI/CD via GitHub Actions -> AWS EC2; fully dockerized\n  (Python, PostgreSQL, Redis, RabbitMQ).')
+      }),
+      'deployments': d({
+        'fleet.json': f('{\n  "fleet": "edge-runtime",\n  "sites_online": 23,\n  "uptime": "99.9%",\n  "states": 9,\n  "throughput": "300k units/day",\n  "inference_ms": 37,\n  "models": ["yolov8", "unet", "ast", "ocsort"],\n  "runtime": ["tensorrt", "docker", "gstreamer"]\n}'),
+        'sites.csv': f('site,state,type,cameras\nCement Plant,Rajasthan,bag-inspection,8\nCement Plant,Gujarat,bag-counting,6\nCement Plant,Madhya Pradesh,label-check,7\nCement Plant,Karnataka,bag-tracking,9\nCement Plant,Tamil Nadu,bag-inspection,8\nMedical Devices,Haryana,360-qa,5\nAuto Parts,Maharashtra,defect-detection,10\nPharma,Telangana,inspection,5\nSteel,Odisha,dimensioning,6'),
+        'india.map': f(String.raw`             . Rajasthan
+            /\__   . Uttar Pradesh
+           /    \____
+          |  INDIA   \      ___
+           \   . MH   |    /   20+ edge sites live
+            \  . TG  /     \   streaming @ <40ms
+             \ . KA /
+              \. TN/
+               \../
+                \/`)
+      }),
+      'skills': d({
+        'languages.txt': f('Python, SQL'),
+        'frameworks.txt': f('PyTorch, Keras, Flask, FastAPI'),
+        'tools.txt': f('Git, Docker, VS Code, Jupyter, Linux, TensorRT, RabbitMQ, Redis, OpenCV'),
+        'interests.txt': f('Object Detection, Image Segmentation, Anomaly Detection,\n2D/3D Dimensioning, OCR, LLMs, RAG, Low-code systems,\nWorkflow orchestration, GANs, NLP')
+      }),
+      'education': d({
+        'education.txt': f('2020-2022  MSc Computer Science - IIITM Kerala     CGPA 9.3/10\n2017-2020  BSc Physics       - University of Kerala CGPA 9.2/10\n2017       Class 12 CBSE                            90/100\n2015       Class 10 CBSE                            10/10')
+      }),
+      'contact': d({
+        'email.txt': f('amalradhakrishnan198@gmail.com'),
+        'phone.txt': f('+91 88488 81596'),
+        'github.url': f('https://github.com/amal-r'),
+        'linkedin.url': f('https://linkedin.com/in/amal-r')
+      }),
+      '.secrets': d({
+        'flag.txt': f('🏴  you found it.\n\n  "the best way to predict the future is to deploy it."\n\n  now run:  hire-me'),
+        '.morale.txt': f('it works on my machine. ship it. 🚀')
+      })
+    });
+
+    /* ---- state ---- */
+    let cwd = [];            // path from home (~)
+    let history = [], histIdx = 0;
+    let started = false, terminating = false, activeInput = null, matrixOn = false;
+
+    /* ---- helpers ---- */
+    const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    function getNode(path){ let n = FS; for (const s of path){ if (!n.children || !n.children[s]) return null; n = n.children[s]; } return n; }
+    function pathStr(){ return '~' + (cwd.length ? '/' + cwd.join('/') : ''); }
+    function resolve(p){
+      let base, rest;
+      if (p === undefined || p === ''){ return { node:getNode(cwd), path:[...cwd] }; }
+      if (p[0] === '~'){ base = []; rest = p.slice(1).replace(/^\//,''); }
+      else if (p[0] === '/'){ base = []; rest = p.slice(1); }
+      else { base = [...cwd]; rest = p; }
+      const segs = rest.length ? rest.split('/') : [];
+      let cur = [...base];
+      for (const s of segs){
+        if (s === '' || s === '.') continue;
+        if (s === '..'){ cur.pop(); continue; }
+        const node = getNode(cur);
+        if (!node || node.type !== 'dir' || !node.children[s]) return null;
+        cur.push(s);
+      }
+      return { node:getNode(cur), path:cur };
+    }
+    function print(html, cls){
+      const div = document.createElement('div');
+      div.className = 'ln' + (cls ? ' ' + cls : '');
+      div.innerHTML = html;
+      body.appendChild(div);
+      return div;
+    }
+    const scroll = () => { body.scrollTop = body.scrollHeight; };
+
+    /* ---- commands ---- */
+    const CMDS = {
+      help(){
+        print('<span class="acc">available commands</span>');
+        print('  ls [-a] [-l] [dir]   list   cd [dir]   change dir   pwd   path');
+        print('  cat &lt;file&gt;          read   tree       show tree    clear clear');
+        print('  open &lt;file.url&gt;     open link        whoami   history   date   uname');
+        print('  echo &lt;text&gt;        man &lt;cmd&gt;        exit (back to site)');
+        print('');
+        print('<span class="dim">curious? try:</span> neofetch · banner · hire-me · matrix · sl · coffee · theme · vim · sudo');
+        print('<span class="dim">and there\'s a hidden folder somewhere... (ls -a)</span>');
+      },
+      ls(args){
+        const flags = args.filter(a => a[0] === '-').join('');
+        const target = args.find(a => a[0] !== '-');
+        const r = resolve(target);
+        if (!r){ print('ls: '+esc(target)+': No such file or directory','err'); return; }
+        if (r.node.type === 'file'){ print(esc(target)); return; }
+        const all = flags.includes('a');
+        let names = Object.keys(r.node.children).filter(n => all || n[0] !== '.');
+        names.sort();
+        if (!names.length){ return; }
+        if (flags.includes('l')){
+          names.forEach(n => {
+            const node = r.node.children[n];
+            const isDir = node.type === 'dir';
+            const sz = isDir ? '-' : (node.content.length + 'b');
+            print((isDir?'drwxr-xr-x':'-rw-r--r--')+'  amal  '+sz.padStart(6)+'  <span class="'+(isDir?'dir':'')+'">'+esc(n)+(isDir?'/':'')+'</span>');
+          });
+        } else {
+          print(names.map(n => {
+            const isDir = r.node.children[n].type === 'dir';
+            return '<span class="'+(isDir?'dir':'')+'">'+esc(n)+(isDir?'/':'')+'</span>';
+          }).join('   '));
+        }
+      },
+      cd(args){
+        const t = args[0];
+        if (!t || t === '~'){ cwd = []; return; }
+        const r = resolve(t);
+        if (!r){ print('cd: '+esc(t)+': No such file or directory','err'); return; }
+        if (r.node.type !== 'dir'){ print('cd: '+esc(t)+': Not a directory','err'); return; }
+        cwd = r.path;
+      },
+      pwd(){ print('/home/amal'+ (cwd.length ? '/'+cwd.join('/') : '')); },
+      cat(args){
+        if (!args.length){ print('usage: cat &lt;file&gt;','dim'); return; }
+        args.forEach(t => {
+          const r = resolve(t);
+          if (!r){ print('cat: '+esc(t)+': No such file or directory','err'); return; }
+          if (r.node.type === 'dir'){ print('cat: '+esc(t)+': Is a directory','err'); return; }
+          const isUrl = t.endsWith('.url');
+          print(esc(r.node.content));
+          if (isUrl) print('<span class="dim">↳ run: open '+esc(t)+'</span>');
+        });
+      },
+      tree(){
+        print('<span class="dir">~</span>');
+        (function walk(path, prefix){
+          const node = getNode(path);
+          const names = Object.keys(node.children).filter(n => n[0] !== '.').sort();
+          names.forEach((n,i) => {
+            const last = i === names.length-1;
+            const child = node.children[n];
+            const isDir = child.type === 'dir';
+            print(prefix + (last?'└── ':'├── ') + '<span class="'+(isDir?'dir':'')+'">'+esc(n)+(isDir?'/':'')+'</span>');
+            if (isDir) walk([...path,n], prefix + (last?'    ':'│   '));
+          });
+        })([], '');
+      },
+      clear(){ body.innerHTML = ''; },
+      echo(args){ print(esc(args.join(' '))); },
+      whoami(){ print('amal — AI Lead @ Frinks AI.  you\'re logged in as a <span class="acc">curious visitor</span> :)'); },
+      history(){ history.forEach((h,i)=> print('  '+String(i+1).padStart(3)+'  '+esc(h))); },
+      date(){ print(new Date().toString()); },
+      uname(args){
+        if (args.includes('-a')) print('Linux edge-runtime 6.1.0-edge #1 SMP aarch64 Jetson GNU/Linux');
+        else print('Linux');
+      },
+      open(args){
+        const t = args[0]; const r = resolve(t);
+        if (!r || r.node.type === 'dir'){ print('open: '+esc(t||'')+': not a file','err'); return; }
+        const url = r.node.content.trim();
+        if (/^https?:\/\//.test(url)){ window.open(url,'_blank'); print('opening '+esc(url)+' ...','ok'); }
+        else print('open: '+esc(t)+': not a link','err');
+      },
+      man(args){
+        const m = {ls:'ls — list directory contents',cd:'cd — change the working directory',cat:'cat — concatenate and print files',pwd:'pwd — print working directory',tree:'tree — list contents recursively',rm:'rm — remove files. (please don\'t.)'};
+        print(m[args[0]] || ('No manual entry for '+esc(args[0]||'')));
+      },
+      neofetch(){
+        const L = [
+          '        <span class="acc">▟███████▙</span>        <span class="acc">'+USER+'</span>',
+          '      <span class="acc">▟███▛  ▜███▙</span>      ----------------------',
+          '     <span class="acc">███▛  ▟▙  ▜███</span>     OS:      EdgeOS (aarch64)',
+          '     <span class="acc">███▙  ▜▛  ▟███</span>     Host:    Jetson-class node',
+          '      <span class="acc">▜███▙  ▟███▛</span>      Role:    AI Lead @ Frinks AI',
+          '        <span class="acc">▜█████▛</span>        Uptime:  since Jun 2022',
+          '          <span class="acc">▀▀▀</span>          Models:  yolov8 unet ast ocsort',
+          '                         Runtime: tensorrt · docker',
+          '                         Sites:   20+ across India',
+          '                         Shell:   amalsh 1.0'
+        ];
+        L.forEach(l => print(l));
+      },
+      banner(){
+        print('  ▄▀█ █▀▄▀█ ▄▀█ █     █▀█','acc');
+        print('  █▀█ █░▀░█ █▀█ █▄▄   █▀▄','acc');
+        print('<span class="dim">  ── edge AI · industrial automation ──</span>');
+      },
+      'hire-me'(){
+        print('<span class="acc">// why we should talk</span>');
+        print('I ship AI that runs in production on factory floors — not just notebooks.');
+        print('20+ sites, 300k units/day, &lt;40ms inference, 99.9% uptime.');
+        print('');
+        print('email:    <a href="mailto:amalradhakrishnan198@gmail.com">amalradhakrishnan198@gmail.com</a>');
+        print('linkedin: <a href="https://linkedin.com/in/amal-r" target="_blank">linkedin.com/in/amal-r</a>');
+        print('<span class="dim">↳ run: open contact/linkedin.url</span>');
+      },
+      hire(){ CMDS['hire-me'](); },
+      coffee(){ print('<span class="err">HTTP 418</span> I\'m a teapot ☕  — I make edge AI, not espresso.'); },
+      make(args){ if (args[0]==='coffee') return CMDS.coffee(); print('make: *** No rule to make target \''+esc(args.join(' '))+'\'.  Stop.','err'); },
+      sudo(args){
+        print('[sudo] password for visitor: ');
+        print('Sorry, this incident will be reported. 🚨','err');
+        if (args.join(' ').includes('hire')) print('<span class="dim">(...but I admire the persistence. run: hire-me)</span>');
+      },
+      vim(){ print('E: to exit vim you must first make peace with your past.','err'); print('<span class="dim">(just type: exit)</span>'); },
+      nano(){ print('nano: real ones use vim. (type: exit)','dim'); },
+      theme(){
+        const themes = [['amber','#F5A623'],['cyan','#29D3C2'],['magenta','#FF5FA2'],['green','#5CCB7B']];
+        theme._i = ((theme._i||0)+1) % themes.length;
+        const [name,col] = themes[theme._i];
+        document.documentElement.style.setProperty('--accent', col);
+        print('theme: switched to <span class="acc">'+name+'</span>  (signal color updated site-wide)','ok');
+      },
+      sl(){ trainAnim(); },
+      matrix(){ matrixRain(); },
+      exit(){ closeTerm(); }
+    };
+
+    /* destructive -> self destruct */
+    const DESTRUCT = /^(rm|rmdir|del|dd|mkfs|shred|shutdown|reboot|halt|poweroff|format)\b/i;
+    const FORKBOMB = /:\s*\(\s*\)\s*\{/;
+
+    function run(raw){
+      const line = raw.trim();
+      if (!line) return;
+      if (DESTRUCT.test(line) || FORKBOMB.test(line)) { selfDestruct(line); return; }
+      const parts = line.match(/(?:[^\s"]+|"[^"]*")+/g).map(s => s.replace(/"/g,''));
+      const cmd = parts[0], args = parts.slice(1);
+      if (CMDS[cmd]) { try { CMDS[cmd](args); } catch(e){ print('error: '+esc(String(e.message||e)),'err'); } }
+      else print(esc(cmd)+': command not found  <span class="dim">(try: help)</span>','err');
+    }
+
+    /* ---- self destruct ---- */
+    function selfDestruct(line){
+      terminating = true;
+      print('<span class="prompt">'+USER+'</span><span class="path">:'+pathStr()+'$</span> '+esc(line));
+      print('rm: removing portfolio... <span class="err">PERMISSION ESCALATION DETECTED</span>','err');
+      print('⚠  UNAUTHORIZED WRITE ATTEMPT — locking session','err');
+      term.classList.add('panic');
+      const junk = ['Kernel panic - not syncing: Attempted to kill init!','[ 0.000000] CPU#0 stuck','segfault at 0 ip 00007f rip 00007f','EXT4-fs error: corruption detected','double free or corruption (!prev)','BUG: unable to handle kernel NULL pointer','sigterm received — flushing /dev/null'];
+      let n = 0;
+      const iv = setInterval(() => {
+        print(junk[Math.floor(Math.random()*junk.length)] + ' 0x'+(Math.random().toString(16).slice(2,10)),'err');
+        scroll();
+        if (++n > 12){
+          clearInterval(iv);
+          print('');
+          print('============================================','err');
+          print('   ACCESS TERMINATED — SESSION REVOKED','err');
+          print('============================================','err');
+          scroll();
+          setTimeout(() => {
+            term.classList.remove('panic');
+            closeTerm();
+            if (typeof toast === 'function') toast('// terminal access revoked 💀');
+            // reset for next session
+            body.innerHTML = ''; cwd = []; started = false; terminating = false;
+          }, 1200);
+        }
+      }, 140);
+    }
+
+    /* ---- animations ---- */
+    function trainAnim(){
+      const train = ['  ___   ____','_| _ |_|    |__   choo choo!','|_o_o_|_|____|_|'];
+      const w = 60; let pos = w;
+      const lines = train.map(() => print(''));
+      const iv = setInterval(() => {
+        train.forEach((t,i) => { lines[i].textContent = ' '.repeat(Math.max(0,pos)) + t; });
+        scroll();
+        if (--pos < -30){ clearInterval(iv); }
+      }, 45);
+    }
+    function matrixRain(){
+      if (matrixOn) return; matrixOn = true;
+      const cv = document.createElement('canvas'); cv.id = 'matrix-cv';
+      term.appendChild(cv);
+      const ctx = cv.getContext('2d');
+      const resize = () => { cv.width = term.clientWidth; cv.height = term.clientHeight; };
+      resize();
+      const chars = '01ｱｲｳｴｵ▟▙█YOLOv8UNetTRT'.split('');
+      const fs = 14, cols = Math.floor(cv.width/fs);
+      const drops = Array(cols).fill(0).map(()=>Math.random()*-50);
+      let raf;
+      function draw(){
+        ctx.fillStyle = 'rgba(0,0,0,0.08)'; ctx.fillRect(0,0,cv.width,cv.height);
+        ctx.fillStyle = '#F5A623'; ctx.font = fs+'px monospace';
+        for (let i=0;i<cols;i++){
+          ctx.fillText(chars[Math.floor(Math.random()*chars.length)], i*fs, drops[i]*fs);
+          if (drops[i]*fs > cv.height && Math.random() > 0.975) drops[i] = 0;
+          drops[i]++;
+        }
+        raf = requestAnimationFrame(draw);
+      }
+      draw();
+      const stop = () => { cancelAnimationFrame(raf); cv.remove(); matrixOn = false; document.removeEventListener('keydown',stop); cv.removeEventListener('click',stop); activeInput&&activeInput.focus(); };
+      print('<span class="dim">// entering the matrix — press any key or click to exit</span>');
+      window.addEventListener('resize', resize);
+      setTimeout(()=>document.addEventListener('keydown',stop),50);
+      cv.addEventListener('click',stop);
+    }
+
+    /* ---- prompt / input ---- */
+    function newPrompt(){
+      const row = document.createElement('div');
+      row.className = 'term-input-row';
+      row.innerHTML = '<span class="prompt">'+USER+'</span><span class="path">:'+pathStr()+'$</span>&nbsp;';
+      const inp = document.createElement('input');
+      inp.className = 'term-input'; inp.setAttribute('autocomplete','off'); inp.spellcheck = false;
+      row.appendChild(inp);
+      body.appendChild(row);
+      activeInput = inp; inp.focus(); scroll();
+      inp.addEventListener('keydown', e => onKey(e, row, inp));
+    }
+    function onKey(e, row, inp){
+      if (e.key === 'Enter'){
+        const val = inp.value;
+        inp.removeEventListener('keydown', onKey);
+        const span = document.createElement('span'); span.className = 'term-cmd'; span.textContent = val;
+        row.replaceChild(span, inp); activeInput = null;
+        if (val.trim()) history.push(val);
+        histIdx = history.length;
+        run(val);
+        scroll();
+        if (!terminating) newPrompt();
+      } else if (e.key === 'ArrowUp'){
+        e.preventDefault();
+        if (histIdx > 0){ histIdx--; inp.value = history[histIdx]; setTimeout(()=>inp.setSelectionRange(inp.value.length,inp.value.length),0); }
+      } else if (e.key === 'ArrowDown'){
+        e.preventDefault();
+        if (histIdx < history.length-1){ histIdx++; inp.value = history[histIdx]; }
+        else { histIdx = history.length; inp.value = ''; }
+      } else if (e.key === 'Tab'){
+        e.preventDefault(); complete(inp);
+      } else if (e.key === 'Escape'){
+        closeTerm();
+      } else if (e.key === 'l' && e.ctrlKey){
+        e.preventDefault(); CMDS.clear();
+      }
+    }
+    function complete(inp){
+      const val = inp.value;
+      const tokens = val.split(' ');
+      const last = tokens[tokens.length-1];
+      let cands = [];
+      if (tokens.length === 1){
+        cands = Object.keys(CMDS).filter(c => c.startsWith(last));
+      }
+      let dirPart = '', frag = last;
+      if (last.includes('/')){ dirPart = last.slice(0, last.lastIndexOf('/')+1); frag = last.slice(last.lastIndexOf('/')+1); }
+      const r = resolve(dirPart || '.');
+      if (r && r.node && r.node.type === 'dir'){
+        const fileCands = Object.keys(r.node.children)
+          .filter(n => n.startsWith(frag) && (frag[0]==='.' || n[0]!=='.'))
+          .map(n => dirPart + n + (r.node.children[n].type==='dir' ? '/' : ''));
+        cands = tokens.length === 1 ? cands.concat(fileCands) : fileCands;
+      }
+      if (!cands.length) return;
+      if (cands.length === 1){ tokens[tokens.length-1] = cands[0]; inp.value = tokens.join(' '); return; }
+      // common prefix
+      let pre = cands[0];
+      cands.forEach(c => { while (!c.startsWith(pre)) pre = pre.slice(0,-1); });
+      if (pre.length > last.length){ tokens[tokens.length-1] = pre; inp.value = tokens.join(' '); }
+    }
+
+    /* ---- open / close ---- */
+    function welcome(){
+      print('<span class="dim">Connecting to edge-runtime (aarch64)...</span>');
+      print('<span class="ok">Connection established.</span> Last login: '+new Date().toDateString());
+      print('Type <span class="acc">help</span> to get started, <span class="acc">exit</span> to return to the site.');
+      print('');
+    }
+    function openTerm(){
+      term.classList.add('open'); term.setAttribute('aria-hidden','false');
+      if (!started){ started = true; welcome(); newPrompt(); }
+      else if (activeInput) activeInput.focus();
+      else newPrompt();
+    }
+    function closeTerm(){ term.classList.remove('open'); term.setAttribute('aria-hidden','true'); }
+    window.openTerminal = openTerm;
+
+    document.getElementById('nav-cli').addEventListener('click', openTerm);
+    document.getElementById('term-x').addEventListener('click', closeTerm);
+    body.addEventListener('click', () => { if (!matrixOn && activeInput) activeInput.focus(); });
+
+    /* hidden hint */
+    console.log('%c >_ psst — this site has a CLI. Click [ >_ CLI ] in the nav, or run "Enter CLI mode" from ⌘K.', 'color:#F5A623;font-family:monospace;font-size:12px;');
   })();
 </script>
 
